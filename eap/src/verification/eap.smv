@@ -1,0 +1,75 @@
+MODULE main
+
+VAR
+	pc: 0 .. 1200;
+	--old_pc: Integer;
+	eap: eap_t(pc, eap_t.nextstate);
+
+--ASSIGN
+--	init(old_pc) := 0;
+--	next(old_pc) := pc;
+
+
+
+MODULE eap_t(pc, state)
+
+VAR
+	states: {sNone, sMonitorEnt, sDzoneEnt, sMonitorIn, sDzoneIn, sKill};
+	nextstate: {sNone, sMonitorEnt, sDzoneEnt, sMonitorIn, sDzoneIn, sKill};
+
+DEFINE
+	MCE:=200;
+	MCS:=250;
+	MCL:=400;
+	DCE:=600;
+	DCS:=650;
+	DCL:=800;
+	
+ASSIGN
+	
+	init(states) := case
+			((pc < MCL) & (pc >= MCS)) : sMonitorIn;
+			((pc > DCS) &( pc < DCL))  : sDzoneIn;
+			(pc < MCS) & (pc >= MCE) : sMonitorEnt;
+			(pc < DCS) & (pc >= DCE) : sDzoneEnt;
+			TRUE : sNone;
+			esac;
+	--init(nextstate) := states;
+
+	
+	
+	next(nextstate) := case
+			states = sNone & ((pc < MCS) & (pc >= MCE)): sMonitorEnt;
+			states = sNone & ((pc < DCS) & (pc >= DCE)) : sDzoneEnt;
+			states = sNone & (((pc < MCL) & (pc > MCS)) | ((pc > DCS) &( pc < DCL))) : sKill;
+			states = sNone & (((pc > MCL) & (pc < MCS)) | ((pc < DCS) &( pc > DCL))) : sNone;
+			states = sMonitorEnt & (pc > MCS) & (pc < MCL) : sMonitorIn;
+			states = sMonitorEnt & (pc < DCL) & (pc >= DCS) : sDzoneIn;
+			states = sMonitorEnt & (pc < MCS) & (pc >= MCE) : sMonitorEnt;
+			states = sMonitorEnt & (((pc > MCL) & (pc < MCS)) | ((pc < DCS) &( pc > DCL))) : sNone;
+			states = sMonitorIn & (pc > MCS) & (pc < MCL) : sMonitorIn;
+			states = sMonitorIn & ((pc < MCE) | (pc > MCL)) : sKill;
+			states = sMonitorIn & (pc > MCE) & (pc < MCS) : sMonitorEnt;
+			states = sDzoneEnt & (pc > DCS) & (pc < DCL) : sDzoneIn;
+			states = sDzoneEnt & ((pc < MCL) & (pc >= MCS)) : sKill;
+			states = sDzoneEnt & (((pc >= MCL) & (pc < MCS)) | ((pc < DCS) &( pc > DCL))) : sNone;
+			states = sDzoneIn & (pc > DCS) & (pc < DCL) : sDzoneIn;
+			states = sDzoneIn & (pc < MCS) & (pc > MCE) : sMonitorEnt;
+			states = sDzoneIn & (pc < DCS) & (pc > DCE) : sDzoneEnt;
+			states = sDzoneIn & (pc < MCL) & (pc > MCS) : sKill;
+			states = sKill : sKill;
+			TRUE: sKill;
+			esac;
+
+	--next(states) := next(nextstate);
+
+			TRANS	
+			(states = sNone & ((pc < MCL) & (pc >= MCS)) | ((pc > DCS) &( pc < DCL))) |
+			(states = sDzoneEnt & (pc < MCL) & (pc >= MCS)) |
+			(states = sMonitorIn & (pc < MCE) & (pc > MCL))
+
+
+LTLSPEC G (((states = sNone) & ((pc < MCL) & (pc > MCS)) | ((pc > DCS) & (pc < DCL))) -> states = sKill);
+LTLSPEC G (((states = sDzoneIn) & ((pc < MCL) & (pc > MCS))) -> states = sKill);
+LTLSPEC G (((states = sMonitorIn) & ((pc > MCL) | (pc < MCE))) -> states = sKill);
+LTLSPEC G (states = sKill -> states = sKill);

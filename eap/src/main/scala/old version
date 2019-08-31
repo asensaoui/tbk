@@ -1,0 +1,159 @@
+old version
+
+
+
+
+
+
+
+  def Dagent(addr: UInt, data: UInt) = {
+
+    when((ioaddr === "0xAAAA".U) && ((monitorIn === 2.U) || (romIn === 2.U))) {
+      when (addr === "0xAAAA0000".U) { // SMEntry
+        // start 
+        when (io.write === true.B) {
+          monitorEntry := data
+        }.elsewhen (io.write === false.B) {
+          data := monitorEntry
+        }
+        // end
+      }.elsewhen (addr === "0xAAAA0004".U) { // SMStart
+        // start 
+        when (io.write === true.B) {
+          monitorStart := data
+        }.elsewhen (io.write === false.B) {
+          data := monitorStart
+        }
+        // end
+      }.elsewhen (addr === "0xAAAA0008".U) { // SMEnd
+        // start 
+        when (io.write === true.B) {
+          monitorEnd := data
+        }.elsewhen (io.write === false.B) {
+          data := monitorEnd
+        }
+        // end
+      }.elsewhen (addr === "0xAAAA000C".U) { // SMEn
+        // start 
+        when (io.write === true.B) {
+          monitorEn := data
+        }.elsewhen (io.write === false.B) {
+          data := monitorEn
+        }
+        // end
+      }.elsewhen (addr === "0xAAAA0010".U) { // SZEntry
+        // start 
+        when (io.write === true.B) {
+          secureZoneEntry := data
+        }.elsewhen (io.write === false.B) {
+          data := secureZoneEntry
+        }
+        // end
+      }.elsewhen (addr === "0xAAAA0014".U) { // SZStart
+        // start 
+        when (io.write === true.B) {
+          secureZoneStart := data
+        }.elsewhen (io.write === false.B) {
+          data := secureZoneStart
+        }
+        // end
+      }.elsewhen (addr === "0xAAAA0018".U) { // SZEnd
+        // start 
+        when (io.write === true.B) {
+          secureZoneEnd := data
+        }.elsewhen (io.write === false.B) {
+          data := secureZoneEnd
+        }
+        // end
+      }.elsewhen (addr === "0xAAAA001C".U) { // SZEn
+        // start 
+        when (io.write === true.B) {
+          secureZoneEn := data
+        }.elsewhen (io.write === false.B) {
+          data := secureZoneEn
+        }
+        // end
+      }  
+      // End of configuration
+    }.otherwise { // check if there is a non-authorized data access
+      // TODO
+      when (((addrMatch(addr, smMemoryStart, smMemoryEnd) && !monitorIn) || (addrMatch(addr, romMemoryStart, romMemoryEnd && !romIn))) 
+        || (addrMatch(addr, szMemoryStart, szMemoryEnd) && !secureZoneIn)) {
+        io.out := 0.U
+      }
+    }
+
+      
+  }
+
+
+
+
+  // Instruction Agent
+  def Iagent (pc: UInt, execmode: UInt) = {
+
+    when(addrMatch(pc, monitorEntry, monitorStart)) { // Case monitor entry
+      when(!monitorIn){
+        monitorIn         := 1.U
+        io.out            := 1.U
+      }
+    }.elsewhen(addrMatch(pc, romEntry, romStart)) { // Case rom entry
+      when(!romIn) {
+        romIn             := 1.U
+        io.out            := 1.U
+      }
+    }.elsewhen(addrMatch(pc, secureZoneEntry, secureZoneStart)) { // Case secure zones entry
+      when(!secureZoneIn) {
+        secureZoneIn      := 1.U
+        io.out            := 1.U
+      }
+    }.elsewhen(addrMatch(pc, monitorStart, monitorEnd)) { // Case monitor execution
+      when((monitorIn === 1.U || romIn === 1.U) && (execmode === 1.U)) { // from 
+        // fAuthSignal       := 1.U
+        io.out            := 1.U
+        monitorIn         := 2.U
+      }.elsewhen((monitorIn === 2.U || romIn === 2.U) && (execmode === 1.U)) {
+        io.out            := 1.U
+      }.otherwise {
+        // fAuthSignal       := 0.U
+        secureZoneIn      := 0.U
+        monitorIn         := 0.U
+        romIn             := 0.U
+        io.out            := 0.U
+      }
+    }.elsewhen(addrMatch(pc, romStart, romEnd)) { // Case rom execution
+      when((monitorIn === 1.U || romIn === 1.U) &&  (execmode === 1.U)) {
+        //fAuthSignal       := 1.U
+        io.out            := 1.U
+        romIn             := 2.U
+      }.elsewhen((monitorIn === 2.U || romIn === 2.U) && (execmode === 1.U)) {
+        io.out            := 1.U
+      }.otherwise {
+        //fAuthSignal       := 0.U
+        secureZoneIn      := 0.U
+        monitorIn         := 0.U
+        romIn             := 0.U
+        io.out            := 0.U
+      }
+    }.elsewhen(addrMatch(pc, secureZoneStart, secureZoneEnd)) { // Case secure zones execution
+      when(secureZoneIn === 1.U &&  (execmode === 0.U)) {
+        //fAuthSignal       := 1.U
+        io.out            := 1.U
+        romIn             := 2.U
+      }.elsewhen(secureZoneIn === 2.U && (execmode === 0.U)) {
+        io.out            := 1.U
+      }.otherwise {
+        //fAuthSignal       := 0.U
+        secureZoneIn      := 0.U
+        monitorIn         := 0.U
+        romIn             := 0.U
+        io.out            := 0.U
+      }
+    }.otherwise { // Case 
+      //fAuthSignal         := 0.U
+      secureZoneIn        := 0.U
+      monitorIn           := 0.U
+      romIn               := 0.U
+      io.out              := 1.U
+    }
+  }

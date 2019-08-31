@@ -1,0 +1,21 @@
+MODULE counter(inc)
+VAR 
+  digit : 0..9;
+ASSIGN
+  init(digit) := 0;
+  next(digit) := inc ? (digit + 1) mod 10
+                     : digit;
+DEFINE top := digit = 9;
+
+MODULE main
+VAR 
+  c0 : counter(TRUE);
+  c1 : counter(c0.top);
+  sum : 0..99;
+ASSIGN
+  sum := c0.digit + 10 * c1.digit;   
+
+LTLSPEC
+  G sum = 10
+LTLSPEC
+  F sum = 13
