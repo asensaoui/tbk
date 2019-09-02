@@ -135,12 +135,22 @@ import scala.collection.mutable.ArrayBuffer
   // Data access control
 
   // dAddr is in szMemory
-  val dAddr_is_smMem = addrMatch(ioaddr, smMemoryStart, smMemoryEnd)
-  val dAddr_is_not_smMem = !dAddr_is_smMem
+  val dAddr_is_smMem            = addrMatch(ioaddr, smMemoryStart, smMemoryEnd)
+  val dAddr_is_not_smMem        = !dAddr_is_smMem
 
   // is in szMemory
-  val dAddr_is_szMem = addrMatch(ioaddr, szMemoryStart, szMemoryEnd)
-  val dAddr_is_not_szMem = !dAddr_is_szMem
+  val dAddr_is_szMem            = addrMatch(ioaddr, szMemoryStart, szMemoryEnd)
+  val dAddr_is_not_szMem        = !dAddr_is_szMem
+
+  // security monitor confidentiality
+  val dAddr_is_rootMem          = addrMatch(pc, romStart, romEnd)
+  val dAddr_is_not_rootMem      = !dAddr_is_rootMem
+  val dAddr_is_monitorMem       = addrMatch(pc, monitorStart, monitorEnd)
+  val dAddr_is_not_monitorMem   = !dAddr_is_monitorMem
+
+  // SZ code confidentiality
+  val dAddr_is_szMem            = addrMatch(pc, secureZoneStart, secureZoneEnd)
+  val dAddr_is_not_szMem        = !dAddr_is_szMem
 
   // Disabled by default
   io.securityMonitorMode := false.B

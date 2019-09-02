@@ -125,4 +125,6 @@ LTLSPEC G ((newState = sDzoneEnt) & ((Daddr < DML) & (Daddr >= DMS)) -> reset = 
 LTLSPEC G ((newState = sMonitorEnt) & ((Daddr < MML) & (Daddr >= MMS)) -> reset = true);
 LTLSPEC G ((newState = sMonitorEnt) & ((Daddr < DML) & (Daddr >= DMS)) -> reset = true);
 
+LTLSPEC G ((oldState = sNone) & ((pc < MCL) & (pc >= MCS)) -> next(newState) = sKill);
+
 
