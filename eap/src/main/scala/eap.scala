@@ -143,14 +143,14 @@ import scala.collection.mutable.ArrayBuffer
   val dAddr_is_not_szMem        = !dAddr_is_szMem
 
   // security monitor confidentiality
-  val dAddr_is_rootMem          = addrMatch(pc, romStart, romEnd)
-  val dAddr_is_not_rootMem      = !dAddr_is_rootMem
-  val dAddr_is_monitorMem       = addrMatch(pc, monitorStart, monitorEnd)
-  val dAddr_is_not_monitorMem   = !dAddr_is_monitorMem
+  val dAddr_is_rootCode          = addrMatch(pc, romStart, romEnd)
+  val dAddr_is_not_rootCode      = !dAddr_is_rootCode
+  val dAddr_is_monitorCode       = addrMatch(pc, monitorStart, monitorEnd)
+  val dAddr_is_not_monitorCode   = !dAddr_is_monitorCode
 
   // SZ code confidentiality
-  val dAddr_is_szMem            = addrMatch(pc, secureZoneStart, secureZoneEnd)
-  val dAddr_is_not_szMem        = !dAddr_is_szMem
+  val dAddr_is_szCode            = addrMatch(pc, secureZoneStart, secureZoneEnd)
+  val dAddr_is_not_szCode        = !dAddr_is_szMem
 
   // Disabled by default
   io.securityMonitorMode := false.B
@@ -178,7 +178,7 @@ import scala.collection.mutable.ArrayBuffer
       io.securityMonitorMode := true.B
     }
     is (State.sDzoneIn) {
-      when (dAddr_is_szMem) {
+      when (dAddr_is_szMem && dAddr_is_not_rootCode && dAddr_is_not_monitorCode) {
         io.out := true.B
       }
     }
@@ -199,7 +199,7 @@ import scala.collection.mutable.ArrayBuffer
       }
     }
     is (State.sNone) {
-      when(dAddr_is_not_smMem && dAddr_is_not_szMem) {
+      when(dAddr_is_not_smMem && dAddr_is_not_szMem && dAddr_is_not_rootCode && dAddr_is_not_monitorCode &&dAddr_is_not_szCode) {
         io.out := true.B
       }
     }
